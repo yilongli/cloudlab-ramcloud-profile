@@ -6,7 +6,7 @@
 HOSTNAME=$(hostname -f | cut -d"." -f1)
 HW_TYPE=$(geni-get manifest | grep $HOSTNAME | grep -oP 'hardware_type="\K[^"]*')
 MLNX_OFED_VER=4.3-1.0.1.0
-if [ "$HW_TYPE" = "m510" ]; then
+if [ "$HW_TYPE" = "m510" ] || [ "$HW_TYPE" = "xl170" ]; then
     OS_VER="ubuntu`lsb_release -r | cut -d":" -f2 | xargs`"
     MLNX_OFED="MLNX_OFED_LINUX-$MLNX_OFED_VER-$OS_VER-x86_64"
 fi
