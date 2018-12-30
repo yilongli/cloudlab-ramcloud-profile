@@ -18,7 +18,7 @@ types = [ ("m510", "m510 (Intel Xeon-D)"),
           ("d430", "d430 (Intel 2x10GbE)"),
           ("xl170", "xl170 (Intel Xeon-E5 2x25GbE)")]
 
-num_nodes = range(2, 45)
+num_nodes = range(2, 46)
 
 pc.defineParameter("image", "Disk Image",
                    portal.ParameterType.IMAGE, images[0], images)
