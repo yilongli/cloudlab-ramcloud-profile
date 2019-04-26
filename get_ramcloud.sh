@@ -13,22 +13,18 @@ let num_rcxx=$(geni-get manifest | grep -o "<node " | wc -l)-2
 mkdir private
 cat >>private/MakefragPrivateTop <<EOL
 DEBUG := no
-
 CCACHE := yes
-LINKER := gold
-DEBUG_OPT := yes
 
-GLIBCXX_USE_CXX11_ABI := yes
+C_STANDARD := c14
+CXX_STANDARD := c++14
 
-DPDK := yes
+#DPDK := yes
 DPDK_DIR := dpdk
 DPDK_SHARED := no
 EOL
 
 # Build DPDK libraries
 hardware_type=$(geni-get manifest | grep -oP 'hardware_type="\K[^"]*' | head -1)
-mlnx_dpdk=n
 if [ "$hardware_type" = "m510" ] || [ "$hardware_type" = "xl170" ]; then
-    mlnx_dpdk=y
+    MLNX_DPDK=y scripts/dpdkBuild.sh
 fi
-MLNX_DPDK=$mlnx_dpdk scripts/dpdkBuild.sh

@@ -12,13 +12,13 @@ import geni.aggregate.cloudlab as cloudlab
 
 pc = portal.Context()
 
-images = [ ("UBUNTU16-64-STD", "Ubuntu 16.04") ]
+images = [ ("UBUNTU18-64-STD", "Ubuntu 18.04") ]
 
 types = [ ("m510", "m510 (Intel Xeon-D)"),
-          ("d430", "d430 (Intel 2x10GbE)"),
-          ("xl170", "xl170 (Intel Xeon-E5 2x25GbE)")]
+          ("xl170", "xl170 (Intel Xeon-E5 2x25GbE)"),
+          ("r320", "r320 (Intel Xeon E5-2450 8 cores@2.1Ghz, Mellanox CX3 56Gbps)")]
 
-num_nodes = range(2, 46)
+num_nodes = range(2, 200)
 
 pc.defineParameter("image", "Disk Image",
                    portal.ParameterType.IMAGE, images[0], images)
@@ -30,7 +30,6 @@ pc.defineParameter("num_nodes", "# Nodes",
                    portal.ParameterType.INTEGER, 2, num_nodes)
 
 params = pc.bindParameters()
-#pc.verifyParameters()
 
 rspec = RSpec.Request()
 
@@ -51,7 +50,6 @@ for name in node_names:
 
     node.hardware_type = params.type
     node.disk_image = urn.Image(cloudlab.Utah,"emulab-ops:%s" % params.image)
-#    node.component_id = urn.Node(cloudlab.Utah, name)
 
     node.addService(RSpec.Execute(
             shell="sh",
