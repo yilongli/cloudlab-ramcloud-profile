@@ -14,8 +14,11 @@ pc = portal.Context()
 
 images = [ ("UBUNTU18-64-STD", "Ubuntu 18.04") ]
 
-types = [ ("m510", "m510 (Intel Xeon-D)"),
-          ("xl170", "xl170 (Intel Xeon-E5 2x25GbE)"),
+types = [ ("m510", "m510 (Intel Xeon-D 1548 8 cores@2.0Ghz, Mellanox CX3 10GbE)"),
+          ("xl170", "xl170 (Intel Xeon E5-2640v4 10 cores@2.4Ghz, Mellanox CX4 25GbE)"),
+          ("c8220", "c8220 (2 x Intel Xeon E5-2660v2 10 cores@2.2Ghz, Qlogic 40Gbps)"),
+          ("c6320", "c6320 (2 x Intel Xeon E5-2683v3 14 cores@2.0Ghz, Qlogic 40Gbps)"),
+          ("c6220", "c6220 (2 x Intel Xeon E5-2650v2 8 cores@2.6Ghz, Mellanox CX3 56Gbps)"),
           ("r320", "r320 (Intel Xeon E5-2450 8 cores@2.1Ghz, Mellanox CX3 56Gbps)")]
 
 num_nodes = range(2, 200)
@@ -36,9 +39,9 @@ rspec = RSpec.Request()
 lan = RSpec.LAN()
 rspec.addResource(lan)
 
-node_names = ["rcmaster", "rcnfs"]
-for i in range(params.num_nodes - 2):
-    node_names.append("rc%02d" % (i + 1))
+node_names = ["rcnfs"]
+for i in range(1, params.num_nodes):
+    node_names.append("rc%02d" % i)
 
 for name in node_names:
     node = RSpec.RawPC(name)
@@ -49,11 +52,11 @@ for name in node_names:
         bs.size = "200GB"
 
     node.hardware_type = params.type
-    node.disk_image = urn.Image(cloudlab.Utah,"emulab-ops:%s" % params.image)
+    node.disk_image = 'urn:publicid:IDN+emulab.net+image+emulab-ops:' + params.image
 
     node.addService(RSpec.Execute(
             shell="sh",
-            command="sudo /local/repository/startup.sh &>> /local/startup.log"))
+            command="sudo /local/repository/startup.sh"))
 
     rspec.addResource(node)
 

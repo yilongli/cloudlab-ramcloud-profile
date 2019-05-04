@@ -13,6 +13,7 @@ for i in range(1, num_rcXX + 1):
     hostname = result.split('.', 1)[0]
     ipAddr = result.splitlines()[1]
     hosts.append((hostname, ipAddr, i))
+hosts.sort()
 
 print 'hosts = %s' % hosts
 print '''# The disk on m510 is a 256 (512?) GB NVMe flash storage.

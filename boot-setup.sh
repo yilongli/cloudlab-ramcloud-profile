@@ -12,9 +12,11 @@ for N in $(seq $((NUM_CPUS/2)) $((NUM_CPUS-1))); do
 done
 echo "boot-setup.sh: disabled hyper-threading"
 
-# Disable CPU frequency scaling
-cpupower frequency-set -g performance
-echo "boot-setup.sh: changed CPU governor to performance"
+# According to RHEL 7 Performance Tuning Guide, the latency-performance
+# profile sets CPU governor to performance and locked the CPU to the low
+# C states (by PM QoS)".
+tuned-adm profile latency-performance
+echo "boot-setup.sh: tuned-adm activates latency-performance profile"
 
 # Setup password-less ssh between nodes
 USERS="root `ls /users`"
