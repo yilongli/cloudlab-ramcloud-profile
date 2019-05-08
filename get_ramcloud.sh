@@ -18,13 +18,16 @@ CCACHE := yes
 C_STANDARD := c14
 CXX_STANDARD := c++14
 
-#DPDK := yes
+DPDK := no
 DPDK_DIR := dpdk
 DPDK_SHARED := no
 EOL
 
+# TODO: remove this when dpdkBuild.sh is merged into ramcloud master
+cp /local/repository/dpdkBuild.sh scripts/
+
 # Build DPDK libraries
 hardware_type=$(geni-get manifest | grep -oP 'hardware_type="\K[^"]*' | head -1)
 if [ "$hardware_type" = "m510" ] || [ "$hardware_type" = "xl170" ]; then
-    MLNX_DPDK=y scripts/dpdkBuild.sh
+    scripts/dpdkBuild.sh
 fi

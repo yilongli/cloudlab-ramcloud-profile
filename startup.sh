@@ -40,6 +40,9 @@ apt-get -y install tuned
 apt-get --assume-yes install systemtap-sdt-dev libunwind-dev libaudit-dev \
         libgtk2.0-dev libperl-dev binutils-dev liblzma-dev libiberty-dev
 
+# Infiniband performance testing and diagnose tools
+apt-get --assume-yes install perftest infiniband-diags
+
 # Install RAMCloud dependencies
 apt-get --assume-yes install build-essential git-core doxygen libpcre3-dev \
         protobuf-compiler libprotobuf-dev libcrypto++-dev libevent-dev \
@@ -90,16 +93,22 @@ if [ ! -z "$MLNX_OFED" ]; then
     pushd /local
     axel -n 8 -q http://www.mellanox.com/downloads/ofed/MLNX_OFED-$MLNX_OFED_VER/$MLNX_OFED.tgz
     tar xzf $MLNX_OFED.tgz
-    $MLNX_OFED/mlnxofedinstall --force --without-fw-update
+    # Note: option "--upstream-libs --dpdk" is required to compile DPDK later.
+    # http://doc.dpdk.org/guides/nics/mlx5.html#quick-start-guide-on-ofed-en
+    $MLNX_OFED/mlnxofedinstall --dpdk --upstream-libs --force --without-fw-update
     popd
+
+    # Libmnl is a prerequisite of DPDK that is not installed by Mellanox OFED.
+    # http://doc.dpdk.org/guides/nics/mlx5.html#installation
+    apt-get --assume-yes --fix-broken install
+    apt-get --assume-yes install libmnl-dev
 fi
 # Or, for QLogic HCAs on Clemson site, install generic linux rdma packages.
 # Note that these QLE7340 cards do *NOT* support kernel-bypass so the RTT
 # is ~10us, which makes them less interesting although they have full-bisection
 # bandwidth among all nodes.
 if [ "$HW_TYPE" = "c8220" ] || [ "$HW_TYPE" = "c6320" ]; then
-    apt-get --assume-yes install rdma-core rdmacm-utils perftest \
-            infiniband-diags ibverbs-*
+    apt-get --assume-yes install rdma-core rdmacm-utils ibverbs-*
 fi
 
 if [ "$RC_NODE" = "rcnfs" ]; then
