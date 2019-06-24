@@ -7,7 +7,7 @@ exec 1> >(logger -s -t $(basename $0)) 2>&1
 # Variables
 HOSTNAME=$(hostname -f | cut -d"." -f1)
 HW_TYPE=$(geni-get manifest | grep $HOSTNAME | grep -oP 'hardware_type="\K[^"]*')
-MLNX_OFED_VER=4.5-1.0.1.0
+MLNX_OFED_VER=4.6-1.0.1.1
 if [ "$HW_TYPE" = "m510" ] || [ "$HW_TYPE" = "xl170" ] || [ "$HW_TYPE" = "r320" ] || [ "$HW_TYPE" = "c6220" ]; then
     OS_VER="ubuntu`lsb_release -r | cut -d":" -f2 | xargs`"
     MLNX_OFED="MLNX_OFED_LINUX-$MLNX_OFED_VER-$OS_VER-x86_64"
@@ -30,7 +30,15 @@ export DEBIAN_FRONTEND=noninteractive
 # Install packages
 echo "Installing common utilities"
 apt-get update
-apt-get -yq install ccache htop mosh vim tmux pdsh tree axel
+apt-get -yq install ccache cmake htop mosh vim tmux pdsh tree axel
+
+# Compile googletest from source:
+# https://stackoverflow.com/a/52392930/11495205
+apt-get -yq install libgtest-dev
+pushd /usr/src/googletest/
+cmake .
+cmake --build . --target install
+popd
 
 echo "Installing NFS"
 apt-get -yq install nfs-kernel-server nfs-common
@@ -38,7 +46,7 @@ apt-get -yq install nfs-kernel-server nfs-common
 echo "Installing performance tools"
 kernel_release=`uname -r`
 apt-get -yq install linux-tools-common linux-tools-${kernel_release} \
-        hugepages cpuset msr-tools i7z tuned
+        hugepages cpuset msr-tools i7z numactl tuned
 
 echo "Installing RAMCloud dependencies"
 apt-get -yq install build-essential git-core doxygen libpcre3-dev \
@@ -49,6 +57,9 @@ apt-get -yq install build-essential git-core doxygen libpcre3-dev \
 # Downgrade to JDK 8.0 to make RAMCloud's java binding happy.
 apt-get -yq remove openjdk*
 apt-get -yq install openjdk-8-jdk
+
+echo "Installing eRPC dependencies"
+apt-get -yq install libgflags-dev
 
 # Install crontab job to run the following script every time we reboot:
 # https://superuser.com/questions/708149/how-to-use-reboot-in-etc-cron-d
@@ -85,6 +96,10 @@ done
 # Fix "rcmd: socket: Permission denied" when using pdsh
 echo ssh > /etc/pdsh/rcmd_default
 
+# Add "/usr/local/lib" to the dynamic linker's run-time search paths, which is
+# usually already present in "etc/ld.so.conf.d/libc.conf".
+ldconfig
+
 # Download and install Mellanox OFED package
 if [ ! -z "$MLNX_OFED" ]; then
     pushd /local
@@ -115,6 +130,9 @@ if [ "$HW_TYPE" = "c8220" ] || [ "$HW_TYPE" = "c6320" ]; then
             infiniband-diags ibverbs-*
 fi
 
+# Configure 4K 2MB huge pages permanently.
+echo "vm.nr_hugepages=4096" >> /etc/sysctl.conf
+
 if [ "$RC_NODE" = "rcnfs" ]; then
     # Setup nfs server following instructions from the links below:
     #   https://vitux.com/install-nfs-server-and-client-on-ubuntu/
@@ -139,15 +157,6 @@ if [ "$RC_NODE" = "rcnfs" ]; then
     done
     printf "rcnfs\n" >> rc-hosts.txt
 else
-    # Enable hugepage support: http://dpdk.org/doc/guides/linux_gsg/sys_reqs.html
-    # The changes will take effects after reboot. m510 is not a NUMA machine.
-    # Reserve 1GB hugepages via kernel boot parameters
-    kernel_boot_params="default_hugepagesz=1G hugepagesz=1G hugepages=8"
-
-    # Update GRUB with our kernel boot parameters
-    sed -i "s/GRUB_CMDLINE_LINUX_DEFAULT=\"/GRUB_CMDLINE_LINUX_DEFAULT=\"$kernel_boot_params /" /etc/default/grub
-    update-grub
-
     # NFS clients setup: use the publicly-routable IP addresses for both the server
     # and the clients to avoid interference with the experiment.
     rcnfs_ip=`geni-get manifest | grep rcnfs | egrep -o "ipv4=.*" | cut -d'"' -f2`
