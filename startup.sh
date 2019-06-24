@@ -23,32 +23,32 @@ if [ -f /local/startup_service_done ]; then
     exit 0
 fi
 
-# Install common utilities
+# Skip any interactive post-install configuration step:
+# https://serverfault.com/q/227190
+export DEBIAN_FRONTEND=noninteractive
+
+# Install packages
+echo "Installing common utilities"
 apt-get update
-apt-get --assume-yes install ccache htop mosh vim tmux pdsh tree axel
+apt-get -yq install ccache htop mosh vim tmux pdsh tree axel
 
-# NFS
-apt-get --assume-yes install nfs-kernel-server nfs-common
+echo "Installing NFS"
+apt-get -yq install nfs-kernel-server nfs-common
 
-# cpupower, hugepages, msr-tools (for rdmsr), i7z
+echo "Installing performance tools"
 kernel_release=`uname -r`
-apt-get --assume-yes install linux-tools-common linux-tools-${kernel_release} \
-        hugepages cpuset msr-tools i7z
-apt-get -y install tuned
+apt-get -yq install linux-tools-common linux-tools-${kernel_release} \
+        hugepages cpuset msr-tools i7z tuned
 
-# Dependencies to build the Linux perf tool
-apt-get --assume-yes install systemtap-sdt-dev libunwind-dev libaudit-dev \
-        libgtk2.0-dev libperl-dev binutils-dev liblzma-dev libiberty-dev
-
-# Install RAMCloud dependencies
-apt-get --assume-yes install build-essential git-core doxygen libpcre3-dev \
+echo "Installing RAMCloud dependencies"
+apt-get -yq install build-essential git-core doxygen libpcre3-dev \
         protobuf-compiler libprotobuf-dev libcrypto++-dev libevent-dev \
         libboost-all-dev libgtest-dev libzookeeper-mt-dev zookeeper \
         libssl-dev
 
 # Downgrade to JDK 8.0 to make RAMCloud's java binding happy.
-apt-get --assume-yes remove openjdk*
-apt-get --assume-yes install openjdk-8-jdk
+apt-get -yq remove openjdk*
+apt-get -yq install openjdk-8-jdk
 
 # Install crontab job to run the following script every time we reboot:
 # https://superuser.com/questions/708149/how-to-use-reboot-in-etc-cron-d
@@ -99,8 +99,8 @@ if [ ! -z "$MLNX_OFED" ]; then
 
         # Libmnl is a prerequisite of DPDK that is not installed by Mellanox OFED.
         # http://doc.dpdk.org/guides/nics/mlx5.html#installation
-        apt-get --assume-yes --fix-broken install
-        apt-get --assume-yes install libmnl-dev
+        apt-get -yq --fix-broken install
+        apt-get -yq install libmnl-dev
     else
         $MLNX_OFED/mlnxofedinstall --force --without-fw-update
     fi
@@ -111,7 +111,7 @@ fi
 # is ~10us, which makes them less interesting although they have full-bisection
 # bandwidth among all nodes.
 if [ "$HW_TYPE" = "c8220" ] || [ "$HW_TYPE" = "c6320" ]; then
-    apt-get --assume-yes install rdma-core rdmacm-utils perftest \
+    apt-get -yq install rdma-core rdmacm-utils perftest \
             infiniband-diags ibverbs-*
 fi
 
