@@ -3,7 +3,7 @@
 # Note: only written for xl170 with MLNX OFED installed as
 # "--dpdk --upstream-libs"
 
-git clone git@github.com:yilongli/eRPC.git
+git clone https://github.com/yilongli/eRPC.git
 cd eRPC
 
 # Build eRPC for basic testing
@@ -13,6 +13,7 @@ cd eRPC
 #   3) How to control whether to output static or shared library?
 #   4) Profile-guided opt enabled by default? who is gonna use that? huh?
 #   5) LTO enabled by default? how/when is it applied?
+# Or cmake . -DPERF=OFF -DLOG_LEVEL=trace -DTRANSPORT=dpdk to enable debug logging
 cmake . -DPERF=OFF -DTRANSPORT=dpdk
 make -j
 scripts/run-tests-dpdk.sh

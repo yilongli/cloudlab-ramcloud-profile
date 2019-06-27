@@ -6,7 +6,7 @@ git submodule update --init --recursive
 ln -s ../../hooks/pre-commit .git/hooks/pre-commit
 
 # Generate localconfig.py for RAMCloud
-let num_rcxx=$(geni-get manifest | grep -o "<node " | wc -l)-2
+let num_rcxx=$(geni-get manifest | grep -o "<node " | wc -l)-1
 /local/repository/localconfigGen.py $num_rcxx > scripts/localconfig.py
 
 # Generate private makefile configuration

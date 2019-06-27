@@ -5,6 +5,7 @@
 exec 1> >(logger -s -t $(basename $0)) 2>&1
 
 # Variables
+echo $* | grep -q "mlnx-dpdk" && MLNX_DPDK=yes || MLNX_DPDK=no
 HOSTNAME=$(hostname -f | cut -d"." -f1)
 HW_TYPE=$(geni-get manifest | grep $HOSTNAME | grep -oP 'hardware_type="\K[^"]*')
 MLNX_OFED_VER=4.6-1.0.1.1
@@ -96,18 +97,15 @@ done
 # Fix "rcmd: socket: Permission denied" when using pdsh
 echo ssh > /etc/pdsh/rcmd_default
 
-# Add "/usr/local/lib" to the dynamic linker's run-time search paths, which is
-# usually already present in "etc/ld.so.conf.d/libc.conf".
-ldconfig
-
 # Download and install Mellanox OFED package
 if [ ! -z "$MLNX_OFED" ]; then
     pushd /local
     axel -n 8 -q http://www.mellanox.com/downloads/ofed/MLNX_OFED-$MLNX_OFED_VER/$MLNX_OFED.tgz
     tar xzf $MLNX_OFED.tgz
 
-    # m510 and xl170 nodes are using Mellanox Ethernet cards.
-    if [ "$HW_TYPE" = "m510" ] || [ "$HW_TYPE" = "xl170" ]; then
+    # m510 and xl170 nodes are equipped with Mellanox Ethernet cards, which can
+    # be used via either DPDK or the raw mlx4/5 driver.
+    if [ "$MLNX_DPDK" = "yes" ] && ([ "$HW_TYPE" = "m510" ] || [ "$HW_TYPE" = "xl170" ]); then
         # Note: option "--upstream-libs --dpdk" is required to compile DPDK later.
         # http://doc.dpdk.org/guides/nics/mlx5.html#quick-start-guide-on-ofed-en
         $MLNX_OFED/mlnxofedinstall --dpdk --upstream-libs --force --without-fw-update
@@ -150,7 +148,7 @@ if [ "$RC_NODE" = "rcnfs" ]; then
     # Generate a list of machines in the cluster
     cd $SHARED_HOME
     > rc-hosts.txt
-    let num_rcxx=$(geni-get manifest | grep -o "<node " | wc -l)-2
+    let num_rcxx=$(geni-get manifest | grep -o "<node " | wc -l)-1
     for i in $(seq "$num_rcxx")
     do
         printf "rc%02d\n" $i >> rc-hosts.txt

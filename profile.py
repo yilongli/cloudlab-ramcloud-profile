@@ -32,6 +32,9 @@ pc.defineParameter("type", "Node Type",
 pc.defineParameter("num_nodes", "# Nodes",
                    portal.ParameterType.INTEGER, 2, num_nodes)
 
+pc.defineParameter("mlnx_dpdk_support", "Enable Mellanox OFED DPDK support?",
+                   portal.ParameterType.BOOLEAN, False, [True, False])
+
 params = pc.bindParameters()
 
 rspec = RSpec.Request()
@@ -54,9 +57,10 @@ for name in node_names:
     node.hardware_type = params.type
     node.disk_image = 'urn:publicid:IDN+emulab.net+image+emulab-ops:' + params.image
 
-    node.addService(RSpec.Execute(
-            shell="sh",
-            command="sudo /local/repository/startup.sh"))
+    cmd_string = "sudo /local/repository/startup.sh"
+    if params.mlnx_dpdk_support:
+        cmd_string += " --mlnx-dpdk"
+    node.addService(RSpec.Execute(shell="sh", command=cmd_string))
 
     rspec.addResource(node)
 
